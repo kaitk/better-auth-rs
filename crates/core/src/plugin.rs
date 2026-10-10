@@ -293,6 +293,29 @@ impl<S: AuthSchema> AuthContext<S> {
             })
     }
 
+    /// better-auth's `freshSessionMiddleware`: a session, created less than `fresh_age`
+    /// ago (better-auth's default is a day; zero turns the check off), else 403
+    /// `SESSION_NOT_FRESH`.
+    pub async fn require_fresh_session_middleware(
+        &self,
+        req: &AuthRequest,
+    ) -> AuthResult<(crate::wire::UserView, crate::wire::SessionView)> {
+        let (user, session) = self.require_session_middleware(req).await?;
+        let fresh_age = self
+            .config
+            .session
+            .fresh_age
+            .unwrap_or_else(|| chrono::Duration::days(1));
+        if !fresh_age.is_zero() && crate::time::now() - session.created_at >= fresh_age {
+            return Err(AuthError::Upstream {
+                status: 403,
+                code: "SESSION_NOT_FRESH",
+                message: "Session is not fresh",
+            });
+        }
+        Ok((user, session))
+    }
+
     /// Require a session read from the server store for sensitive work.
     pub async fn require_authoritative_session(
         &self,
