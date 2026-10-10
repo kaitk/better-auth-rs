@@ -26,8 +26,8 @@ struct UnlinkAccountRequest {
 }
 
 #[derive(Debug, Serialize)]
+// In better-auth's key order, which puts `id` after the timestamps.
 pub(crate) struct AccountResponse {
-    id: String,
     #[serde(rename = "accountId")]
     account_id: String,
     #[serde(rename = "providerId")]
@@ -38,6 +38,7 @@ pub(crate) struct AccountResponse {
     created_at: String,
     #[serde(rename = "updatedAt")]
     updated_at: String,
+    id: String,
     scopes: Vec<String>,
 }
 
