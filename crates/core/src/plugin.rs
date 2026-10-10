@@ -275,6 +275,22 @@ impl<S: AuthSchema> AuthContext<S> {
             .await
     }
 
+    /// [`Self::require_session`] as better-auth's `sessionMiddleware` refuses: 401
+    /// `UNAUTHORIZED` "Unauthorized".
+    pub async fn require_session_middleware(
+        &self,
+        req: &AuthRequest,
+    ) -> AuthResult<(crate::wire::UserView, crate::wire::SessionView)> {
+        self.require_session(req).await.map_err(|error| match error {
+            AuthError::Unauthenticated => AuthError::Upstream {
+                status: 401,
+                code: "UNAUTHORIZED",
+                message: "Unauthorized",
+            },
+            error => error,
+        })
+    }
+
     /// Require a session read from the server store for sensitive work.
     pub async fn require_authoritative_session(
         &self,

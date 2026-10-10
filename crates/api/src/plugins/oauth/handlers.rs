@@ -39,14 +39,20 @@ async fn require_session<S: better_auth_core::AuthSchema>(
     req: &AuthRequest,
     ctx: &AuthContext<S>,
 ) -> Result<S::Session, AuthError> {
+    // better-auth's sessionMiddleware refuses with `UNAUTHORIZED`.
+    let unauthorized = || AuthError::Upstream {
+        status: 401,
+        code: "UNAUTHORIZED",
+        message: "Unauthorized",
+    };
     let session_manager = ctx.session_manager();
     let token = session_manager
         .extract_session_token(req)
-        .ok_or(AuthError::Unauthenticated)?;
+        .ok_or_else(unauthorized)?;
     session_manager
         .get_session(&token)
         .await?
-        .ok_or(AuthError::Unauthenticated)
+        .ok_or_else(unauthorized)
 }
 
 fn generate_pkce() -> (String, String) {
@@ -321,7 +327,7 @@ pub(super) async fn complete_link_social(
     }
 
     if !linking.allow_different_emails && !user_info.email.eq_ignore_ascii_case(&link.email) {
-        return Err("email_doesn't_match".to_string());
+        return Err("email_does_not_match".to_string());
     }
 
     if let Some(existing_account) = ctx
