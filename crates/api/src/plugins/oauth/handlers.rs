@@ -358,7 +358,7 @@ pub(super) async fn complete_link_social(
                     id_token: token_bundle.id_token,
                     access_token_expires_at: tokens.access_token_expires_at,
                     refresh_token_expires_at: tokens.refresh_token_expires_at,
-                    scope: (!tokens.scopes.is_empty()).then(|| tokens.scopes.join(",")),
+                    scope: merge_scopes(existing_account.scope(), &tokens.scopes),
                     ..Default::default()
                 },
             )
@@ -394,6 +394,22 @@ pub(super) async fn complete_link_social(
         .map_err(|_| "unable_to_link_account".to_string())?;
 
     Ok(())
+}
+
+/// better-auth's `mergeScopes`: the stored scopes, then new ones, each once.
+fn merge_scopes(stored: Option<&str>, incoming: &[String]) -> Option<String> {
+    let mut merged: Vec<&str> = Vec::new();
+    for scope in stored
+        .unwrap_or_default()
+        .split(',')
+        .chain(incoming.iter().map(String::as_str))
+        .map(str::trim)
+    {
+        if !scope.is_empty() && !merged.contains(&scope) {
+            merged.push(scope);
+        }
+    }
+    (!merged.is_empty()).then(|| merged.join(","))
 }
 
 fn invalid_additional_params(params: Option<&IndexMap<String, String>>) -> Option<AuthResponse> {

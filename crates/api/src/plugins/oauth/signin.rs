@@ -146,7 +146,8 @@ pub(super) async fn process_oauth_sign_in(
                         id_token: token_bundle.id_token.clone(),
                         access_token_expires_at: tokens.access_token_expires_at,
                         refresh_token_expires_at: tokens.refresh_token_expires_at,
-                        scope: (!tokens.scopes.is_empty()).then(|| tokens.scopes.join(",")),
+                        // better-auth leaves `scope` alone on sign-in; only linking
+                        // changes it.
                         ..Default::default()
                     },
                 )
