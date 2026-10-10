@@ -228,6 +228,9 @@ pub struct CreateApiKey {
     pub permissions: Option<String>,
     pub metadata: Option<String>,
     pub enabled: bool,
+    /// When the key was created, written as both `created_at` and `updated_at`. The plugin
+    /// reads it before the expiry, as upstream does, so a key never lives shorter than asked.
+    pub created_at: DateTime<Utc>,
 }
 
 /// API key update data.

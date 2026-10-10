@@ -299,6 +299,7 @@ async fn organization_key_verifies_without_emulating_a_user_session() {
             refill_amount: None,
             permissions: None,
             metadata: None,
+            created_at: chrono::Utc::now(),
         })
         .await
         .unwrap();

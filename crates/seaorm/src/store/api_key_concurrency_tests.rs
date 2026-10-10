@@ -42,6 +42,7 @@ async fn file_sqlite_connections_consume_quota_without_lock_upgrade_errors()
                     permissions: None,
                     metadata: None,
                     enabled: true,
+                    created_at: chrono::Utc::now(),
                 })
                 .await?;
             let barrier = Arc::new(Barrier::new(32));

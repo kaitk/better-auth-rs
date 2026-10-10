@@ -75,7 +75,7 @@ where
     S: AuthSchema + Send + Sync,
 {
     async fn create_api_key(&self, input: CreateApiKey) -> AuthResult<ApiKey> {
-        let now = Utc::now();
+        let now = input.created_at;
         ActiveModel {
             id: Set(Uuid::new_v4().to_string()),
             name: Set(input.name),

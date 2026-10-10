@@ -193,6 +193,7 @@ async fn create_key_for_user(
     ApiKeyPlugin::validate_name(config, body.name.as_deref(), true)?;
 
     let (full_key, hash, start) = ApiKeyPlugin::generate_key(config, body.prefix.as_deref());
+    let created_at = better_auth_core::time::now();
     let input = CreateApiKey {
         reference_id,
         config_id: config.config_id.clone(),
@@ -221,6 +222,7 @@ async fn create_key_for_user(
             .filter(|value| json_truthy(value))
             .map(ToString::to_string),
         enabled: true,
+        created_at,
     };
     let api_key = ctx.database.create_api_key(input).await?;
     plugin.maybe_delete_expired(ctx).await;
