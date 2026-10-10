@@ -238,6 +238,9 @@ pub struct OAuthProvider {
     pub disable_implicit_sign_up: bool,
     pub disable_sign_up: bool,
     pub override_user_info_on_sign_in: bool,
+    /// Follow HTTP redirects from the token endpoint. better-auth's GitHub provider
+    /// exchanges codes with `betterFetch`, which follows them; generic providers refuse.
+    pub follow_token_redirects: bool,
 }
 
 impl OAuthProvider {
@@ -282,6 +285,7 @@ impl OAuthProvider {
             disable_implicit_sign_up: false,
             disable_sign_up: false,
             override_user_info_on_sign_in: false,
+            follow_token_redirects: false,
         }
     }
 
@@ -328,6 +332,7 @@ impl OAuthProvider {
             disable_implicit_sign_up: false,
             disable_sign_up: false,
             override_user_info_on_sign_in: false,
+            follow_token_redirects: true,
         }
     }
 
@@ -371,6 +376,7 @@ impl OAuthProvider {
             disable_implicit_sign_up: false,
             disable_sign_up: false,
             override_user_info_on_sign_in: false,
+            follow_token_redirects: false,
         }
     }
 }

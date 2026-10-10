@@ -35,7 +35,9 @@ pub(super) async fn refresh_tokens_via_provider(
     request
         .authenticate(authentication(provider, TokenGrantType::RefreshToken))
         .await?;
-    let value = request.send(token_endpoint).await?;
+    let value = request
+        .send(token_endpoint, provider.config.follow_token_redirects)
+        .await?;
     let mut tokens = parse_token_response(value)?;
     tokens.raw = None;
     apply_default_expiry(tokens, provider)
@@ -87,7 +89,9 @@ pub(super) async fn validate_authorization_code_via_provider(
     request
         .authenticate(authentication(provider, TokenGrantType::AuthorizationCode))
         .await?;
-    let value = request.send(token_endpoint).await?;
+    let value = request
+        .send(token_endpoint, provider.config.follow_token_redirects)
+        .await?;
     apply_default_expiry(parse_token_response(value)?, provider)
 }
 

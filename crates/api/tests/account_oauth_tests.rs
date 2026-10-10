@@ -365,6 +365,7 @@ fn make_test_provider(mock_url: &str) -> OAuthProvider {
         disable_implicit_sign_up: false,
         disable_sign_up: false,
         override_user_info_on_sign_in: false,
+        follow_token_redirects: false,
     }
 }
 
@@ -447,6 +448,7 @@ async fn test_encrypt_oauth_tokens_stored_encrypted_in_db() {
             disable_implicit_sign_up: provider.disable_implicit_sign_up,
             disable_sign_up: provider.disable_sign_up,
             override_user_info_on_sign_in: provider.override_user_info_on_sign_in,
+            follow_token_redirects: false,
         },
     );
     let oauth_plugin = OAuthPlugin::with_config(oauth_config);
@@ -1302,6 +1304,7 @@ async fn test_link_social_returns_redirect_url_with_state() {
             disable_implicit_sign_up: false,
             disable_sign_up: false,
             override_user_info_on_sign_in: false,
+            follow_token_redirects: false,
         },
     );
 

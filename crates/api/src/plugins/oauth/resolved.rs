@@ -215,6 +215,7 @@ async fn resolve_generic(
         disable_implicit_sign_up: config.disable_implicit_sign_up,
         disable_sign_up: config.disable_sign_up,
         override_user_info_on_sign_in: config.override_user_info,
+        follow_token_redirects: false,
     };
     Ok(Some(ResolvedProvider {
         config: provider,

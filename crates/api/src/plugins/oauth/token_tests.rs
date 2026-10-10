@@ -478,7 +478,7 @@ async fn token_request_refuses_redirects_without_replaying_credentials() {
         ))
         .await
         .unwrap();
-    let error = request.send(&endpoint).await.unwrap_err();
+    let error = request.send(&endpoint, false).await.unwrap_err();
     assert!(
         error
             .to_string()

@@ -264,9 +264,17 @@ impl TokenRequest {
         Ok(())
     }
 
-    pub(super) async fn send(self, token_endpoint: &str) -> AuthResult<serde_json::Value> {
+    pub(super) async fn send(
+        self,
+        token_endpoint: &str,
+        follow_redirects: bool,
+    ) -> AuthResult<serde_json::Value> {
         let client = reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
+            .redirect(if follow_redirects {
+                reqwest::redirect::Policy::limited(20)
+            } else {
+                reqwest::redirect::Policy::none()
+            })
             .build()
             .map_err(|error| AuthError::internal(format!("OAuth HTTP client failed: {error}")))?;
         let response = client
