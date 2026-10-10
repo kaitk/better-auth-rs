@@ -58,6 +58,31 @@ pub(super) struct ProcessOAuthUserResult {
 pub(super) enum OAuthSignInError {
     Generic(String),
     Banned(String),
+    /// An `APIError` from a database hook, which upstream redirects with its own code
+    /// and message (for example a `user.create.before` hook refusing a sign-up).
+    Api {
+        status: u16,
+        code: &'static str,
+        message: &'static str,
+    },
+}
+
+impl OAuthSignInError {
+    /// A store error: a hook's `APIError` keeps its code, anything else is `fallback`.
+    pub(super) fn from_store(error: AuthError, fallback: &str) -> Self {
+        match error {
+            AuthError::Upstream {
+                status,
+                code,
+                message,
+            } => Self::Api {
+                status,
+                code,
+                message,
+            },
+            _ => Self::Generic(fallback.to_owned()),
+        }
+    }
 }
 
 impl OAuthSignInError {
@@ -77,6 +102,16 @@ impl OAuthSignInError {
                 },
             )?,
             Self::Banned(message) => AuthError::banned_user(message).to_auth_response(),
+            Self::Api {
+                status,
+                code,
+                message,
+            } => AuthError::Upstream {
+                status,
+                code,
+                message,
+            }
+            .to_auth_response(),
         })
     }
 
@@ -88,6 +123,7 @@ impl OAuthSignInError {
             // An APIError instead redirects with its `code` and message, so the
             // param is the constant, not a lowercased word.
             Self::Banned(message) => ("BANNED_USER".to_string(), Some(message.as_str())),
+            Self::Api { code, message, .. } => ((*code).to_owned(), Some(message)),
         }
     }
 }
@@ -101,6 +137,9 @@ impl From<String> for OAuthSignInError {
 impl From<SessionIssueError> for OAuthSignInError {
     fn from(value: SessionIssueError) -> Self {
         match value {
+            SessionIssueError::Auth(error @ AuthError::Upstream { .. }) => {
+                Self::from_store(error, "")
+            }
             SessionIssueError::Auth(error) => Self::Generic(error.to_string()),
             SessionIssueError::Banned { message } => Self::Banned(message),
         }
@@ -376,7 +415,7 @@ pub(super) async fn process_oauth_sign_in(
             .database
             .create_user(create_user)
             .await
-            .map_err(|_| "unable to create user".to_string())?;
+            .map_err(|error| OAuthSignInError::from_store(error, "unable to create user"))?;
 
         let created_account = ctx
             .database
