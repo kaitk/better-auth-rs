@@ -29,6 +29,9 @@ pub(super) async fn handle_callback(
 
     let mut merged = HashMap::new();
     if req.method() == &better_auth_core::HttpMethod::Post {
+        if let Err(response) = crate::plugins::json_body::oauth_callback(req) {
+            return Ok(response);
+        }
         if let Some(body) = &req.body
             && !body.is_empty()
         {

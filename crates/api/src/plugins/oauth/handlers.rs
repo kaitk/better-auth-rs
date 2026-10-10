@@ -846,6 +846,9 @@ pub(crate) async fn handle_social_sign_in(
     req: &AuthRequest,
     ctx: &AuthContext<impl better_auth_core::AuthSchema>,
 ) -> AuthResult<AuthResponse> {
+    if let Err(response) = crate::plugins::json_body::oauth_flow(req, false) {
+        return Ok(response);
+    }
     let body: SocialSignInRequest = match better_auth_core::validate_request_body(req) {
         Ok(v) => v,
         Err(resp) => return Ok(resp),
@@ -909,6 +912,9 @@ pub(crate) async fn handle_link_social(
     ctx: &AuthContext<impl better_auth_core::AuthSchema>,
 ) -> AuthResult<AuthResponse> {
     let session = require_session(req, ctx).await?;
+    if let Err(response) = crate::plugins::json_body::oauth_flow(req, true) {
+        return Ok(response);
+    }
     let body: LinkSocialRequest = match better_auth_core::validate_request_body(req) {
         Ok(v) => v,
         Err(resp) => return Ok(resp),
