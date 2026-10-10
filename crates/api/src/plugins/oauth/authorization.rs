@@ -38,15 +38,22 @@ pub(super) fn build_authorization_url(
             message: "Invalid OAuth configuration",
         });
     }
-    let mut scopes: Vec<&str> = input
-        .scopes
-        .unwrap_or_default()
-        .iter()
-        .map(String::as_str)
-        .collect();
-    if generic.is_some() || input.scopes.is_none() {
-        scopes.extend(provider.config.scopes.iter().map(String::as_str));
-    }
+    let requested = input.scopes.unwrap_or_default().iter().map(String::as_str);
+    // Built-in providers put their default scopes first and append the requested ones;
+    // genericOAuth sends the requested scopes before its configured ones.
+    let mut scopes: Vec<&str> = if generic.is_some() {
+        requested
+            .chain(provider.config.scopes.iter().map(String::as_str))
+            .collect()
+    } else {
+        provider
+            .config
+            .scopes
+            .iter()
+            .map(String::as_str)
+            .chain(requested)
+            .collect()
+    };
     if generic.is_some_and(|generic| generic.is_oidc) && !scopes.contains(&"openid") {
         scopes.insert(0, "openid");
     }
