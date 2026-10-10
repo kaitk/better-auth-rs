@@ -45,7 +45,7 @@ pub(crate) fn create_admin_session_cookie_value(
     payload: &AdminSessionCookiePayload,
     max_age: Duration,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = better_auth_core::time::now();
     let claims = AdminSessionCookieClaims {
         session_token: payload.session_token.clone(),
         dont_remember: payload.dont_remember,
@@ -349,7 +349,7 @@ pub(crate) async fn ban_user_core(
         .ban_expires_in
         .or(config.default_ban_expires_in)
         .and_then(Duration::try_seconds)
-        .map(|duration| Utc::now() + duration);
+        .map(|duration| better_auth_core::time::now() + duration);
 
     let update = UpdateUser {
         banned: Some(true),
@@ -424,7 +424,7 @@ pub(crate) async fn impersonate_user_core(
     if target.banned() {
         if target
             .ban_expires()
-            .is_some_and(|expires| expires <= Utc::now())
+            .is_some_and(|expires| expires <= better_auth_core::time::now())
         {
             target = ctx
                 .database
@@ -443,7 +443,7 @@ pub(crate) async fn impersonate_user_core(
         }
     }
 
-    let expires_at = Utc::now()
+    let expires_at = better_auth_core::time::now()
         + Duration::try_seconds(config.impersonation_session_duration.unwrap_or(60 * 60))
             .unwrap_or(Duration::hours(1));
     let create_session = CreateSession {

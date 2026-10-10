@@ -673,7 +673,7 @@ mod tests {
     fn auth_request_virtual_user_id() {
         let mut req = AuthRequest::new(HttpMethod::Get, "/test");
         assert!(req.virtual_user_id().is_none());
-        let now = Utc::now();
+        let now = crate::time::now();
         req.set_virtual_session(crate::wire::SessionView {
             id: "key-123".into(),
             token: "key-token".into(),

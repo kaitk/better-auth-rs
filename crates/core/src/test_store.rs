@@ -77,7 +77,7 @@ impl AuthTransaction<BundledSchema> for MemoryTransaction<'_> {
 #[async_trait]
 impl UserStore<BundledSchema> for MemoryStore {
     async fn create_user(&self, create_user: CreateUser) -> AuthResult<UserView> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let id = create_user
             .id
             .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -179,7 +179,7 @@ impl UserStore<BundledSchema> for MemoryStore {
         if let Some(metadata) = update.metadata {
             user.metadata = metadata;
         }
-        user.updated_at = Utc::now();
+        user.updated_at = crate::time::now();
         Ok(user.clone())
     }
 
@@ -197,7 +197,7 @@ impl UserStore<BundledSchema> for MemoryStore {
 #[async_trait]
 impl SessionStore<BundledSchema> for MemoryStore {
     async fn create_session(&self, create_session: CreateSession) -> AuthResult<SessionView> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let token = format!("session_{}", uuid::Uuid::new_v4());
         let session = SessionView {
             id: uuid::Uuid::new_v4().to_string(),
@@ -231,7 +231,7 @@ impl SessionStore<BundledSchema> for MemoryStore {
             return Ok(None);
         };
         session.additional_fields.extend(fields);
-        session.updated_at = Utc::now();
+        session.updated_at = crate::time::now();
         Ok(Some(session.clone()))
     }
 
@@ -252,7 +252,7 @@ impl SessionStore<BundledSchema> for MemoryStore {
     ) -> AuthResult<()> {
         if let Some(session) = self.lock().sessions.get_mut(token) {
             session.expires_at = expires_at;
-            session.updated_at = Utc::now();
+            session.updated_at = crate::time::now();
             Ok(())
         } else {
             Err(AuthError::SessionNotFound)
@@ -272,7 +272,7 @@ impl SessionStore<BundledSchema> for MemoryStore {
     }
 
     async fn delete_expired_sessions(&self) -> AuthResult<usize> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let mut state = self.lock();
         let before = state.sessions.len();
         state
@@ -292,7 +292,7 @@ impl SessionStore<BundledSchema> for MemoryStore {
             .get_mut(token)
             .ok_or(AuthError::SessionNotFound)?;
         session.active_organization_id = organization_id.map(str::to_owned);
-        session.updated_at = Utc::now();
+        session.updated_at = crate::time::now();
         Ok(session.clone())
     }
 }
@@ -300,7 +300,7 @@ impl SessionStore<BundledSchema> for MemoryStore {
 #[async_trait]
 impl AccountStore<BundledSchema> for MemoryStore {
     async fn create_account(&self, create_account: CreateAccount) -> AuthResult<AccountView> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let account = AccountView {
             id: uuid::Uuid::new_v4().to_string(),
             account_id: create_account.account_id,
@@ -374,7 +374,7 @@ impl AccountStore<BundledSchema> for MemoryStore {
         if let Some(password) = update.password {
             account.password = Some(password);
         }
-        account.updated_at = Utc::now();
+        account.updated_at = crate::time::now();
         Ok(account.clone())
     }
 
@@ -390,7 +390,7 @@ impl VerificationStore<BundledSchema> for MemoryStore {
         &self,
         verification: CreateVerification,
     ) -> AuthResult<VerificationView> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let verification = VerificationView {
             id: uuid::Uuid::new_v4().to_string(),
             identifier: verification.identifier,
@@ -459,7 +459,7 @@ impl VerificationStore<BundledSchema> for MemoryStore {
                 .verifications
                 .retain(|_, verification| verification.identifier != identifier);
         }
-        Ok(found.filter(|verification| verification.expires_at >= Utc::now()))
+        Ok(found.filter(|verification| verification.expires_at >= crate::time::now()))
     }
 
     async fn consume_verification_by_identifier(
@@ -476,7 +476,7 @@ impl VerificationStore<BundledSchema> for MemoryStore {
         state
             .verifications
             .retain(|_, verification| verification.identifier != identifier);
-        Ok(found.filter(|verification| verification.expires_at >= Utc::now()))
+        Ok(found.filter(|verification| verification.expires_at >= crate::time::now()))
     }
 
     async fn delete_verification(&self, id: &str) -> AuthResult<()> {
@@ -485,7 +485,7 @@ impl VerificationStore<BundledSchema> for MemoryStore {
     }
 
     async fn delete_expired_verifications(&self) -> AuthResult<usize> {
-        let now = Utc::now();
+        let now = crate::time::now();
         let mut state = self.lock();
         let before = state.verifications.len();
         state
@@ -623,7 +623,7 @@ impl TwoFactorStore for MemoryStore {
         if let Some(verified) = update.verified {
             factor.verified = verified;
         }
-        factor.updated_at = Utc::now();
+        factor.updated_at = crate::time::now();
         Ok(factor.clone())
     }
     async fn compare_exchange_two_factor_backup_codes(
@@ -641,7 +641,7 @@ impl TwoFactorStore for MemoryStore {
             return Ok(false);
         };
         factor.backup_codes = replacement.to_owned();
-        factor.updated_at = Utc::now();
+        factor.updated_at = crate::time::now();
         Ok(true)
     }
     async fn record_two_factor_failure(
@@ -681,8 +681,8 @@ impl TwoFactorStore for MemoryStore {
             verified: input.verified,
             failed_verification_count: 0,
             locked_until: None,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
         };
         let _ = self
             .lock()
@@ -710,7 +710,7 @@ impl TwoFactorStore for MemoryStore {
             .find(|factor| factor.user_id == user_id)
             .ok_or_else(|| AuthError::not_found("Two-factor settings not found"))?;
         factor.backup_codes = backup_codes.to_owned();
-        factor.updated_at = Utc::now();
+        factor.updated_at = crate::time::now();
         Ok(factor.clone())
     }
     async fn delete_two_factor(&self, user_id: &str) -> AuthResult<()> {

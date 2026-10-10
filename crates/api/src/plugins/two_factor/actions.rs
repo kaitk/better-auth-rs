@@ -266,7 +266,8 @@ pub(super) async fn send_otp_core(
         .create_verification(CreateVerification {
             identifier,
             value: format!("{}:0", hashed_otp),
-            expires_at: Utc::now() + Duration::seconds(DEFAULT_OTP_LIFETIME_SECS),
+            expires_at: better_auth_core::time::now()
+                + Duration::seconds(DEFAULT_OTP_LIFETIME_SECS),
         })
         .await?;
 

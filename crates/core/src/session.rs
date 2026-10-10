@@ -1,4 +1,3 @@
-use chrono::Utc;
 use std::sync::Arc;
 
 use crate::config::AuthConfig;
@@ -92,7 +91,7 @@ impl<S: AuthSchema> SessionManager<S> {
         user_agent: Option<String>,
         expires_in: chrono::Duration,
     ) -> AuthResult<S::Session> {
-        let expires_at = Utc::now() + expires_in;
+        let expires_at = crate::time::now() + expires_in;
 
         let create_session = CreateSession {
             user_id: user.id().to_string(),
@@ -112,12 +111,12 @@ impl<S: AuthSchema> SessionManager<S> {
         let Some(session) = self.database.get_session(token).await? else {
             return Ok(None);
         };
-        if session.expires_at() < Utc::now() || !session.active() {
+        if session.expires_at() < crate::time::now() || !session.active() {
             self.database.delete_session(token).await?;
             return Ok(None);
         }
         if self.needs_refresh(&session) {
-            let new_expires_at = Utc::now() + self.config.session.expires_in;
+            let new_expires_at = crate::time::now() + self.config.session.expires_in;
             self.database
                 .update_session_expiry(token, new_expires_at)
                 .await?;
@@ -130,7 +129,7 @@ impl<S: AuthSchema> SessionManager<S> {
         !self.config.session.disable_session_refresh
             && session.expires_at() - self.config.session.expires_in
                 + self.config.session.update_age.unwrap_or_default()
-                <= Utc::now()
+                <= crate::time::now()
     }
 
     /// Resolve an HTTP session and queue any cookie updates on the request.
@@ -181,8 +180,8 @@ impl<S: AuthSchema> SessionManager<S> {
             if let Some((payload, expires)) = cookie_cache::decode(value, &self.config, cache)
                 && payload.data.session.token == token
                 && payload.version == cache.version
-                && expires >= Utc::now().timestamp_millis()
-                && payload.data.session.expires_at >= Utc::now()
+                && expires >= crate::time::now().timestamp_millis()
+                && payload.data.session.expires_at >= crate::time::now()
             {
                 return Ok(SessionResolution {
                     data: Some(payload.data),
@@ -197,7 +196,7 @@ impl<S: AuthSchema> SessionManager<S> {
             self.clear_cookies(req)?;
             return Ok(none());
         };
-        if session.expires_at() < Utc::now() || !session.active() {
+        if session.expires_at() < crate::time::now() || !session.active() {
             self.clear_cookies(req)?;
             if !self.config.session.defer_session_refresh || is_post {
                 self.database.delete_session(&token).await?;
@@ -230,7 +229,7 @@ impl<S: AuthSchema> SessionManager<S> {
         if needs_refresh {
             match self
                 .database
-                .update_session_expiry(&token, Utc::now() + self.config.session.expires_in)
+                .update_session_expiry(&token, crate::time::now() + self.config.session.expires_in)
                 .await
             {
                 Err(AuthError::SessionNotFound) => {
@@ -313,7 +312,7 @@ impl<S: AuthSchema> SessionManager<S> {
         user_id: impl AsRef<str>,
     ) -> AuthResult<Vec<S::Session>> {
         let sessions = self.database.get_user_sessions(user_id.as_ref()).await?;
-        let now = Utc::now();
+        let now = crate::time::now();
 
         // Filter out expired sessions
         let active_sessions = sessions
@@ -381,7 +380,7 @@ impl<S: AuthSchema> SessionManager<S> {
     /// If `fresh_age` is `None`, the session is never considered fresh.
     pub fn is_session_fresh(&self, session: &impl AuthSession) -> bool {
         match self.config.session.fresh_age {
-            Some(fresh_age) => session.created_at() + fresh_age > Utc::now(),
+            Some(fresh_age) => session.created_at() + fresh_age > crate::time::now(),
             None => false,
         }
     }
@@ -545,10 +544,10 @@ mod tests {
         // A session created "now" is fresh within a 10-minute window.
         let session = SessionView {
             id: "s1".into(),
-            expires_at: Utc::now() + Duration::hours(1),
+            expires_at: crate::time::now() + Duration::hours(1),
             token: "tok".into(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
             ip_address: None,
             user_agent: None,
             user_id: "u1".into(),
@@ -570,10 +569,10 @@ mod tests {
 
         let session = SessionView {
             id: "s1".into(),
-            expires_at: Utc::now() + Duration::hours(1),
+            expires_at: crate::time::now() + Duration::hours(1),
             token: "tok".into(),
-            created_at: Utc::now() - Duration::minutes(20),
-            updated_at: Utc::now(),
+            created_at: crate::time::now() - Duration::minutes(20),
+            updated_at: crate::time::now(),
             ip_address: None,
             user_agent: None,
             user_id: "u1".into(),
@@ -591,10 +590,10 @@ mod tests {
         let mgr = test_manager(); // default: fresh_age = None
         let session = SessionView {
             id: "s1".into(),
-            expires_at: Utc::now() + Duration::hours(1),
+            expires_at: crate::time::now() + Duration::hours(1),
             token: "tok".into(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
             ip_address: None,
             user_agent: None,
             user_id: "u1".into(),

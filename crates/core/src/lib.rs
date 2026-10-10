@@ -28,6 +28,7 @@ pub mod session;
 pub mod store;
 #[cfg(test)]
 pub(crate) mod test_store;
+pub mod time;
 pub mod types;
 mod types_org;
 mod types_plugin;

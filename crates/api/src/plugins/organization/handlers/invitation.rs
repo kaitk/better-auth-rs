@@ -120,8 +120,8 @@ pub(crate) async fn invite_member_core(
         .get_organization_by_id(&org_id)
         .await?
         .ok_or_else(|| AuthError::bad_request("Organization not found"))?;
-    let expires_at =
-        chrono::Utc::now() + chrono::Duration::seconds(config.invitation_expires_in as i64);
+    let expires_at = better_auth_core::time::now()
+        + chrono::Duration::seconds(config.invitation_expires_in as i64);
     let invitation = if let Some(existing) = existing {
         ctx.database
             .update_invitation_expiry(&existing.id(), expires_at)

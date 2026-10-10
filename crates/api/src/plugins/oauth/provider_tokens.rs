@@ -131,7 +131,7 @@ fn expiry(seconds: f64) -> AuthResult<Option<DateTime<Utc>>> {
     if !millis.is_finite() || millis.abs() > i64::MAX as f64 {
         return Err(AuthError::internal("Invalid OAuth token lifetime"));
     }
-    Utc::now()
+    better_auth_core::time::now()
         .checked_add_signed(Duration::milliseconds(millis as i64))
         .map(Some)
         .ok_or_else(|| AuthError::internal("OAuth token lifetime is out of range"))
@@ -314,7 +314,7 @@ mod tests {
         assert!(tokens.access_token_expires_at.is_none());
         assert_eq!(tokens.scopes, ["openid", "email"]);
         assert_eq!(tokens.id_token.as_deref(), Some("identity"));
-        let before = Utc::now();
+        let before = better_auth_core::time::now();
         let tokens =
             parse_token_response(json!({"scope":"email\tprofile,audit  openid", "expires_in":0.5}))
                 .unwrap();

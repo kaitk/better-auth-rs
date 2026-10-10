@@ -3,7 +3,6 @@ use std::time::Duration;
 use base64::Engine;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE, URL_SAFE_NO_PAD};
 use better_auth_core::{AuthConfig, AuthError, AuthRequest, AuthResult};
-use chrono::Utc;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -156,7 +155,7 @@ pub(super) fn create_challenge_cookie(
     ttl_secs: i64,
     token: &str,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = better_auth_core::time::now();
     let claims = ChallengeCookieClaims {
         token: token.to_string(),
         exp: (now + chrono::Duration::seconds(ttl_secs)).timestamp() as usize,

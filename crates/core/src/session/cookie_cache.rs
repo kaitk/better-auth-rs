@@ -1,5 +1,4 @@
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use chrono::Utc;
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use josekit::jwe::{self, Dir, JweHeader};
@@ -67,7 +66,7 @@ pub(super) fn encode(
     cache: &CookieCacheConfig,
     dont_remember: bool,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = crate::time::now();
     let mut payload = serde_json::Map::new();
     let _ = payload.insert("session".into(), serde_json::to_value(&data.session)?);
     let _ = payload.insert("user".into(), serde_json::to_value(&data.user)?);

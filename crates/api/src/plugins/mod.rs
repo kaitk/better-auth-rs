@@ -32,7 +32,7 @@ pub(crate) mod test_helpers {
     use better_auth_core::{AuthContext, AuthRequest, CreateSession, CreateUser, HttpMethod};
     use better_auth_seaorm::store::__private_test_support::bundled_schema::BundledSchema;
     use better_auth_seaorm::{Database, SeaOrmStore};
-    use chrono::{Duration, Utc};
+    use chrono::Duration;
 
     pub type TestDatabase = dyn better_auth_core::store::AuthStore<BundledSchema>;
 
@@ -88,7 +88,7 @@ pub(crate) mod test_helpers {
     ) -> SessionView {
         let create_session = CreateSession {
             user_id,
-            expires_at: Utc::now() + expires_in,
+            expires_at: better_auth_core::time::now() + expires_in,
             ip_address: Some("127.0.0.1".to_string()),
             user_agent: Some("test-agent".to_string()),
             impersonated_by: None,

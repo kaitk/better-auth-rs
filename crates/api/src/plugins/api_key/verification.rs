@@ -144,7 +144,7 @@ impl ApiKeyPlugin {
             let expiration = chrono::DateTime::parse_from_rfc3339(expires_at).map_err(|error| {
                 AuthError::internal(format!("Invalid stored API key expiration: {error}"))
             })?;
-            if chrono::Utc::now() > expiration {
+            if better_auth_core::time::now() > expiration {
                 ctx.database.delete_api_key(&api_key.id).await?;
                 return Err(ApiKeyErrorCode::KeyExpired.into());
             }
@@ -230,7 +230,7 @@ impl ApiKeyPlugin {
             )));
         };
 
-        let now = chrono::Utc::now();
+        let now = better_auth_core::time::now();
         let expires_at = match view.expires_at {
             Some(value) => chrono::DateTime::parse_from_rfc3339(&value)
                 .map_err(|error| {

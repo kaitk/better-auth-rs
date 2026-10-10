@@ -48,7 +48,7 @@ impl MemoryCacheAdapter {
     /// Clean up expired entries
     fn cleanup_expired(&self) {
         if let Ok(mut data) = self.data.lock() {
-            let now = Utc::now();
+            let now = crate::time::now();
             data.retain(|_, entry| entry.expires_at > now);
         }
     }
@@ -65,7 +65,7 @@ impl CacheAdapter for MemoryCacheAdapter {
     async fn set(&self, key: &str, value: &str, expires_in: Duration) -> AuthResult<()> {
         self.cleanup_expired();
 
-        let expires_at = Utc::now() + expires_in;
+        let expires_at = crate::time::now() + expires_in;
         let entry = CacheEntry {
             value: value.to_string(),
             expires_at,
@@ -87,7 +87,7 @@ impl CacheAdapter for MemoryCacheAdapter {
             .data
             .lock()
             .map_err(|_| AuthError::internal("Cache lock poisoned"))?;
-        let now = Utc::now();
+        let now = crate::time::now();
 
         if let Some(entry) = data.get(key) {
             if entry.expires_at > now {
@@ -116,7 +116,7 @@ impl CacheAdapter for MemoryCacheAdapter {
             .data
             .lock()
             .map_err(|_| AuthError::internal("Cache lock poisoned"))?;
-        let now = Utc::now();
+        let now = crate::time::now();
 
         if let Some(entry) = data.get(key) {
             Ok(entry.expires_at > now)
@@ -132,7 +132,7 @@ impl CacheAdapter for MemoryCacheAdapter {
             .map_err(|_| AuthError::internal("Cache lock poisoned"))?;
 
         if let Some(entry) = data.get_mut(key) {
-            entry.expires_at = Utc::now() + expires_in;
+            entry.expires_at = crate::time::now() + expires_in;
         }
 
         Ok(())

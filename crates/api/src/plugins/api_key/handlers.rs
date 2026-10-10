@@ -254,7 +254,7 @@ fn expiration_date(seconds: Option<f64>) -> AuthResult<Option<String>> {
         ));
     }
     let duration = chrono::Duration::milliseconds(milliseconds as i64);
-    let date = chrono::Utc::now()
+    let date = better_auth_core::time::now()
         .checked_add_signed(duration)
         .ok_or_else(|| better_auth_core::AuthError::bad_request("expiresIn is out of range"))?;
     Ok(Some(

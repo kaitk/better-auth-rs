@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use url::Url;
 use uuid::Uuid;
 
@@ -56,7 +56,8 @@ pub(crate) async fn request_password_reset_core(
     };
 
     let reset_token = Uuid::new_v4().simple().to_string();
-    let expires_at = Utc::now() + Duration::hours(config.reset_token_expiry_hours);
+    let expires_at =
+        better_auth_core::time::now() + Duration::hours(config.reset_token_expiry_hours);
 
     let _ = ctx
         .database
@@ -197,7 +198,7 @@ pub(crate) async fn reset_password_token_core(
 
     if verification
         .as_ref()
-        .is_none_or(|verification| verification.expires_at() < Utc::now())
+        .is_none_or(|verification| verification.expires_at() < better_auth_core::time::now())
     {
         return Ok(ResetPasswordTokenResult::Redirect(build_redirect_url(
             &ctx.config.base_url,

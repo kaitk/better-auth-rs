@@ -10,7 +10,7 @@ pub(super) async fn assert_not_locked(
         return Ok(());
     }
     if let Some(until) = factor.locked_until {
-        if until > Utc::now() {
+        if until > better_auth_core::time::now() {
             return Err(AuthError::Upstream {
                 status: 429,
                 code: "ACCOUNT_TEMPORARILY_LOCKED",
@@ -18,7 +18,7 @@ pub(super) async fn assert_not_locked(
             });
         }
         ctx.database
-            .reset_two_factor_failures(&factor.id, Some(Utc::now()))
+            .reset_two_factor_failures(&factor.id, Some(better_auth_core::time::now()))
             .await?;
     }
     Ok(())
@@ -35,7 +35,7 @@ pub(super) async fn record_failure(
             .record_two_factor_failure(
                 &factor.id,
                 config.max_failed_attempts,
-                Utc::now() + Duration::seconds(config.duration_seconds),
+                better_auth_core::time::now() + Duration::seconds(config.duration_seconds),
             )
             .await?;
     }

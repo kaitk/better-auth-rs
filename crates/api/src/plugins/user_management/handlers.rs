@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::Duration;
 
 use better_auth_core::entity::{AuthAccount, AuthSession, AuthUser, AuthVerification};
 use better_auth_core::utils::password as password_utils;
@@ -158,7 +158,8 @@ pub(crate) async fn delete_user_core(
             .create_verification(better_auth_core::CreateVerification {
                 identifier: format!("delete-account-{token}"),
                 value: user.id().to_string(),
-                expires_at: Utc::now() + config.delete_user.delete_token_expires_in,
+                expires_at: better_auth_core::time::now()
+                    + config.delete_user.delete_token_expires_in,
             })
             .await?;
         let verification_url = format!(
@@ -186,7 +187,7 @@ pub(crate) async fn delete_user_core(
 
     if body.password.is_none()
         && let Some(fresh_age) = ctx.config.session.fresh_age
-        && session.created_at() + fresh_age < Utc::now()
+        && session.created_at() + fresh_age < better_auth_core::time::now()
     {
         return Err(AuthError::bad_request(
             "Session expired. Re-authenticate to perform this action.",
@@ -212,7 +213,9 @@ pub(crate) async fn delete_user_callback_core(
         .get_verification_by_identifier(&format!("delete-account-{token}"))
         .await?
     {
-        if verification.expires_at() < Utc::now() || verification.value() != current_user.id() {
+        if verification.expires_at() < better_auth_core::time::now()
+            || verification.value() != current_user.id()
+        {
             return Err(AuthError::not_found("Invalid token"));
         }
 

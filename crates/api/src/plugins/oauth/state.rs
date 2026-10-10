@@ -54,7 +54,7 @@ impl OAuthStatePayload {
             error_url,
             new_user_url,
             link,
-            expires_at: (Utc::now() + Duration::minutes(10)).timestamp_millis(),
+            expires_at: (better_auth_core::time::now() + Duration::minutes(10)).timestamp_millis(),
             request_sign_up,
             id_token_nonce: None,
             oauth_state: None,
@@ -63,7 +63,7 @@ impl OAuthStatePayload {
     }
 
     pub(crate) fn is_expired(&self) -> bool {
-        self.expires_at < Utc::now().timestamp_millis()
+        self.expires_at < better_auth_core::time::now().timestamp_millis()
     }
 }
 
@@ -176,7 +176,7 @@ pub(crate) fn create_cookie_state_value(
     secret: &str,
     payload: &OAuthStatePayload,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = better_auth_core::time::now();
     let claims = StatePayloadClaims {
         payload: payload.clone(),
         exp: (now + Duration::minutes(10)).timestamp() as usize,
@@ -209,7 +209,7 @@ pub(crate) fn create_account_cookie_value(
     payload: &AccountCookiePayload,
     max_age: Duration,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = better_auth_core::time::now();
     let claims = AccountCookieClaims {
         payload: payload.clone(),
         exp: (now + max_age).timestamp() as usize,

@@ -168,9 +168,10 @@ pub(super) async fn handle_callback(
                 return Ok(state_error(payload.error_url.as_deref()));
             }
             if !ctx.config.account.skip_state_cookie_check {
-                let persisted = get_cookie(req, &state_cookie_name(&ctx.config)).and_then(
-                    |value| decode_database_state_cookie_value(&ctx.config.secret, &value),
-                );
+                let persisted =
+                    get_cookie(req, &state_cookie_name(&ctx.config)).and_then(|value| {
+                        decode_database_state_cookie_value(&ctx.config.secret, &value)
+                    });
                 if persisted.as_deref() != Some(state_param.as_str()) {
                     return Ok(state_error(payload.error_url.as_deref()));
                 }

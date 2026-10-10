@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
@@ -22,7 +22,7 @@ pub(crate) fn create_email_verification_token(
     expires_in: Duration,
     request_type: Option<&str>,
 ) -> AuthResult<String> {
-    let now = Utc::now();
+    let now = better_auth_core::time::now();
     let claims = EmailVerificationClaims {
         email: email.to_lowercase(),
         update_to: update_to.map(str::to_string),

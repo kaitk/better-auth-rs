@@ -614,8 +614,8 @@ mod tests {
             email: Some("ada@example.com".to_string()),
             email_verified: true,
             image: None,
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
             username: Some("ada".to_string()),
             display_username: Some("Ada".to_string()),
             two_factor_enabled: true,
@@ -636,10 +636,10 @@ mod tests {
     fn session_view_serializes_camel_case() {
         let session = SessionView {
             id: "session-1".to_string(),
-            expires_at: Utc::now(),
+            expires_at: crate::time::now(),
             token: "token".to_string(),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
             ip_address: Some("127.0.0.1".to_string()),
             user_agent: Some("agent".to_string()),
             user_id: "user-1".to_string(),
@@ -670,8 +670,8 @@ mod tests {
             refresh_token_expires_at: None,
             scope: None,
             password: Some("$2a$hash".to_string()),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
+            created_at: crate::time::now(),
+            updated_at: crate::time::now(),
         };
 
         let json = serde_json::to_value(&account).expect("serialize account view");

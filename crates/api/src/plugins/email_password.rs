@@ -622,7 +622,7 @@ pub(crate) async fn sign_up_core(
                 let session = tx
                     .create_session(CreateSession {
                         user_id: user.id().to_string(),
-                        expires_at: chrono::Utc::now() + expires_in,
+                        expires_at: better_auth_core::time::now() + expires_in,
                         ip_address,
                         user_agent,
                         impersonated_by: None,

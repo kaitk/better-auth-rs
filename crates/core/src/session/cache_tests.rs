@@ -4,6 +4,7 @@ use crate::test_store::{BundledSchema, test_database};
 use crate::utils::cookie_utils::{create_session_cookie, sign_cookie_value};
 use crate::{AuthResponse, CreateUser};
 use chrono::Duration;
+use chrono::Utc;
 
 fn request(token: &str, config: &AuthConfig) -> AuthRequest {
     let mut req = AuthRequest::new(HttpMethod::Get, "/get-session");

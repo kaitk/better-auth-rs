@@ -4,6 +4,7 @@ use crate::test_store::{BundledSchema, test_database};
 use crate::utils::cookie_utils::{create_session_cookie_with_max_age, sign_cookie_value};
 use crate::{AuthResponse, CreateUser};
 use chrono::Duration;
+use chrono::Utc;
 
 async fn refreshed_request() -> (SessionManager<BundledSchema>, AuthRequest, SessionData) {
     let mut config = AuthConfig::new("response-secret-at-least-32-characters");

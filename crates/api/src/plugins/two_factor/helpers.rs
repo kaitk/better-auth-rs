@@ -128,7 +128,7 @@ pub(super) async fn create_trust_device_cookie_header(
     let identifier = format!("trust-device-{}", uuid::Uuid::new_v4());
     let token = sign_value(&ctx.config.secret, &format!("{}!{}", user.id(), identifier))?;
     let value = format!("{}!{}", token, identifier);
-    let expires_at = Utc::now() + Duration::seconds(trust_device_max_age(ctx));
+    let expires_at = better_auth_core::time::now() + Duration::seconds(trust_device_max_age(ctx));
     _ = ctx
         .database
         .create_verification(CreateVerification {

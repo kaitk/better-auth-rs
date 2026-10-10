@@ -281,14 +281,16 @@ impl<S: AuthSchema> AuthContext<S> {
         &self,
         req: &AuthRequest,
     ) -> AuthResult<(crate::wire::UserView, crate::wire::SessionView)> {
-        self.require_session(req).await.map_err(|error| match error {
-            AuthError::Unauthenticated => AuthError::Upstream {
-                status: 401,
-                code: "UNAUTHORIZED",
-                message: "Unauthorized",
-            },
-            error => error,
-        })
+        self.require_session(req)
+            .await
+            .map_err(|error| match error {
+                AuthError::Unauthenticated => AuthError::Upstream {
+                    status: 401,
+                    code: "UNAUTHORIZED",
+                    message: "Unauthorized",
+                },
+                error => error,
+            })
     }
 
     /// Require a session read from the server store for sensitive work.

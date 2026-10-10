@@ -2,7 +2,6 @@ use better_auth_core::entity::AuthAccount;
 use better_auth_core::{
     AuthContext, AuthError, AuthRequest, AuthResponse, AuthResult, UpdateAccount,
 };
-use chrono::Utc;
 
 use super::encryption::{encrypt_token_set, maybe_decrypt};
 use super::handlers::{
@@ -174,7 +173,7 @@ async fn valid_access_token(
         &ctx.config.secret,
     )?;
     let expired = account.access_token_expires_at.is_some_and(|expires_at| {
-        expires_at.timestamp_millis() - Utc::now().timestamp_millis() < 5_000
+        expires_at.timestamp_millis() - better_auth_core::time::now().timestamp_millis() < 5_000
     });
     let refreshed = if expired && let Some(refresh_token) = refresh_token {
         let tokens = refresh_tokens_via_provider(provider, &refresh_token, req)

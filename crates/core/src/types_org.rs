@@ -139,7 +139,7 @@ impl Invitation {
 
     /// Check if the invitation has expired
     pub fn is_expired(&self) -> bool {
-        self.expires_at < Utc::now()
+        self.expires_at < crate::time::now()
     }
 }
 

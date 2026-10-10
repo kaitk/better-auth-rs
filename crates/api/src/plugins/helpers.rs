@@ -5,7 +5,6 @@
 use better_auth_core::config::OAuthStateStrategy;
 use better_auth_core::entity::{AuthAccount, AuthUser};
 use better_auth_core::{AuthContext, AuthError, AuthRequest, AuthResult, CreateUser, UpdateUser};
-use chrono::Utc;
 
 /// Convert an `expiresIn` value (**seconds** from now) into an RFC 3339
 /// `expires_at` timestamp string.
@@ -16,7 +15,7 @@ pub fn expires_in_to_at(expires_in_secs: Option<i64>) -> AuthResult<Option<Strin
         Some(secs) => {
             let duration = chrono::Duration::try_seconds(secs)
                 .ok_or_else(|| AuthError::bad_request("expiresIn is out of range"))?;
-            let dt = chrono::Utc::now()
+            let dt = better_auth_core::time::now()
                 .checked_add_signed(duration)
                 .ok_or_else(|| AuthError::bad_request("expiresIn is out of range"))?;
             Ok(Some(
@@ -264,7 +263,7 @@ pub(crate) async fn issue_user_session_with_lifetime<S: better_auth_core::AuthSc
     if admin_plugin_enabled(ctx) && user.banned() {
         if user
             .ban_expires()
-            .is_some_and(|expires| expires <= Utc::now())
+            .is_some_and(|expires| expires <= better_auth_core::time::now())
         {
             user = ctx
                 .database

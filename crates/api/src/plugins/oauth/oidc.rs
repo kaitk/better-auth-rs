@@ -414,7 +414,7 @@ fn validate_claims(
     if !matches_audience {
         return Err(OidcError::Invalid("ID token audience does not match"));
     }
-    let now = chrono::Utc::now().timestamp() as f64;
+    let now = better_auth_core::time::now().timestamp() as f64;
     for claim in ["iat", "nbf", "exp"] {
         if let Some(value) = claims.get(claim) {
             let value = value

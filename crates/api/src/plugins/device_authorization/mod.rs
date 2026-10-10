@@ -1,4 +1,4 @@
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use rand::RngCore;
 use rand::distributions::{Alphanumeric, DistString};
 use std::fmt;
@@ -241,7 +241,7 @@ impl DeviceAuthorizationPlugin {
             callback(body.client_id.clone(), body.scope.clone()).await?;
         }
 
-        let expires_at = Utc::now() + self.config.expires_in;
+        let expires_at = better_auth_core::time::now() + self.config.expires_in;
         let polling_interval = self.config.interval.num_milliseconds();
         for _ in 0..3 {
             let device_code = self.generate_device_code();
@@ -325,7 +325,7 @@ impl DeviceAuthorizationPlugin {
             return device_error_response(400, "invalid_grant", CLIENT_ID_MISMATCH);
         }
 
-        let now = Utc::now();
+        let now = better_auth_core::time::now();
         if let (Some(last_polled_at), Some(polling_interval)) =
             (device_code.last_polled_at, device_code.polling_interval)
         {
@@ -405,7 +405,7 @@ impl DeviceAuthorizationPlugin {
                     access_token: session.token().to_string(),
                     token_type: "Bearer",
                     expires_in: (session.expires_at().timestamp_millis()
-                        - Utc::now().timestamp_millis())
+                        - better_auth_core::time::now().timestamp_millis())
                     .div_euclid(1000)
                     .max(0),
                     scope: device_code.scope.unwrap_or_default(),
@@ -431,7 +431,7 @@ impl DeviceAuthorizationPlugin {
             return device_error_response(400, "invalid_request", INVALID_USER_CODE);
         };
 
-        if device_code.expires_at < Utc::now() {
+        if device_code.expires_at < better_auth_core::time::now() {
             return device_error_response(400, "expired_token", EXPIRED_USER_CODE);
         }
 
@@ -508,7 +508,7 @@ impl DeviceAuthorizationPlugin {
             return device_error_response(400, "invalid_request", INVALID_USER_CODE);
         };
 
-        if device_code.expires_at < Utc::now() {
+        if device_code.expires_at < better_auth_core::time::now() {
             return device_error_response(400, "expired_token", EXPIRED_USER_CODE);
         }
 

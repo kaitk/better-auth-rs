@@ -804,7 +804,7 @@ pub(super) async fn initiate_oauth_flow_core(
                 .create_verification(CreateVerification {
                     identifier: super::state::state_identifier(&state),
                     value: serde_json::to_string(&payload)?,
-                    expires_at: Utc::now() + Duration::minutes(10),
+                    expires_at: better_auth_core::time::now() + Duration::minutes(10),
                 })
                 .await?;
         }

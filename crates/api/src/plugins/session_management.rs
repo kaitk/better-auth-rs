@@ -296,7 +296,7 @@ mod tests {
     use better_auth_core::config::AccountConfig;
     use better_auth_core::wire::SessionView;
     use better_auth_core::{CreateSession, CreateUser};
-    use chrono::{Duration, Utc};
+    use chrono::Duration;
 
     #[tokio::test]
     async fn invalid_sign_out_body_preserves_session_without_oauth_plugin() {
@@ -535,7 +535,7 @@ mod tests {
 
         let create_session2 = CreateSession {
             user_id: user.id.clone(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("192.168.1.1".to_string()),
             user_agent: Some("another-agent".to_string()),
             impersonated_by: None,
@@ -572,7 +572,7 @@ mod tests {
 
         let direct_session = CreateSession {
             user_id: user.id.clone(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("192.168.1.1".to_string()),
             user_agent: Some("another-agent".to_string()),
             impersonated_by: None,
@@ -582,7 +582,7 @@ mod tests {
 
         let impersonated_session = CreateSession {
             user_id: user.id.clone(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("10.0.0.5".to_string()),
             user_agent: Some("impersonated-agent".to_string()),
             impersonated_by: Some("admin-user".to_string()),
@@ -629,7 +629,7 @@ mod tests {
 
         let create_session2 = CreateSession {
             user_id: user.id.clone(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("192.168.1.1".to_string()),
             user_agent: Some("another-agent".to_string()),
             impersonated_by: None,
@@ -674,7 +674,7 @@ mod tests {
 
         let create_session2 = CreateSession {
             user_id: user2.id,
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("192.168.1.1".to_string()),
             user_agent: Some("another-agent".to_string()),
             impersonated_by: None,
@@ -717,7 +717,7 @@ mod tests {
 
         let create_session2 = CreateSession {
             user_id: user.id.clone(),
-            expires_at: Utc::now() + Duration::hours(24),
+            expires_at: better_auth_core::time::now() + Duration::hours(24),
             ip_address: Some("192.168.1.1".to_string()),
             user_agent: Some("another-agent".to_string()),
             impersonated_by: None,

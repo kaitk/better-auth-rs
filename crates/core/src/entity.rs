@@ -145,7 +145,7 @@ pub trait AuthInvitation: Clone + Send + Sync + Serialize + std::fmt::Debug + 's
 
     /// Check if the invitation has expired.
     fn is_expired(&self) -> bool {
-        self.expires_at() < Utc::now()
+        self.expires_at() < crate::time::now()
     }
 }
 

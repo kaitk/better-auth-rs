@@ -321,7 +321,9 @@ pub(crate) async fn inspect_trusted_device(
         });
     };
 
-    if verification.value() != user.id().as_ref() || verification.expires_at() <= Utc::now() {
+    if verification.value() != user.id().as_ref()
+        || verification.expires_at() <= better_auth_core::time::now()
+    {
         return Ok(TrustedDeviceCheck {
             trusted: false,
             set_cookie_headers: vec![clear_header],
@@ -350,7 +352,8 @@ pub(crate) async fn begin_sign_in_challenge(
         .create_verification(CreateVerification {
             identifier: identifier.clone(),
             value: user.id().to_string(),
-            expires_at: Utc::now() + Duration::seconds(two_factor_cookie_max_age(ctx)),
+            expires_at: better_auth_core::time::now()
+                + Duration::seconds(two_factor_cookie_max_age(ctx)),
         })
         .await?;
 
@@ -359,7 +362,8 @@ pub(crate) async fn begin_sign_in_challenge(
         .create_verification(CreateVerification {
             identifier: format!("2fa-attempts-{identifier}"),
             value: "0".to_owned(),
-            expires_at: Utc::now() + Duration::seconds(two_factor_cookie_max_age(ctx)),
+            expires_at: better_auth_core::time::now()
+                + Duration::seconds(two_factor_cookie_max_age(ctx)),
         })
         .await?;
 
@@ -633,7 +637,7 @@ async fn resolve_two_factor_state<S: better_auth_core::AuthSchema>(
         .get_verification_by_identifier(&identifier)
         .await?
         .ok_or_else(|| AuthError::authentication_failed("Invalid two factor cookie"))?;
-    if verification.expires_at() <= Utc::now() {
+    if verification.expires_at() <= better_auth_core::time::now() {
         ctx.database
             .delete_verification(verification.id().as_ref())
             .await?;

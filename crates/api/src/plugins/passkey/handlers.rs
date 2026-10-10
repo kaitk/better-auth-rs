@@ -3,7 +3,7 @@ use better_auth_core::entity::{AuthPasskey, AuthSession, AuthUser, AuthVerificat
 use better_auth_core::types::UpdatePasskeyAuthentication;
 use better_auth_core::wire::{PasskeyView, SessionView, UserView};
 use better_auth_core::{AuthContext, AuthError, AuthResult, CreatePasskey, CreateVerification};
-use chrono::{Duration, Utc};
+use chrono::Duration;
 use serde_json::{Value, json};
 use uuid::Uuid;
 use webauthn_rs_core::proto::{COSEAlgorithm, PublicKeyCredential, RegisterPublicKeyCredential};
@@ -130,7 +130,7 @@ pub(super) async fn generate_register_options_core(
         })?;
 
     let token = Uuid::new_v4().to_string();
-    let expires_at = Utc::now() + Duration::seconds(config.challenge_ttl_secs);
+    let expires_at = better_auth_core::time::now() + Duration::seconds(config.challenge_ttl_secs);
     let serialized_state = serde_json::to_string(&StoredRegistrationState {
         user_id: user.id().to_string(),
         state: RegistrationChallenge { rs: state },
@@ -211,7 +211,7 @@ pub(super) async fn generate_authenticate_options_core<U: AuthUser>(
     };
 
     let token = Uuid::new_v4().to_string();
-    let expires_at = Utc::now() + Duration::seconds(config.challenge_ttl_secs);
+    let expires_at = better_auth_core::time::now() + Duration::seconds(config.challenge_ttl_secs);
     let _ = ctx
         .database
         .create_verification(CreateVerification {
