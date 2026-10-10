@@ -31,6 +31,9 @@ pub(crate) struct OAuthStatePayload {
     pub request_sign_up: Option<bool>,
     #[serde(rename = "idTokenNonce", skip_serializing_if = "Option::is_none")]
     pub id_token_nonce: Option<String>,
+    /// The state parameter this payload belongs to, checked against the callback's.
+    #[serde(rename = "oauthState", skip_serializing_if = "Option::is_none")]
+    pub oauth_state: Option<String>,
     #[serde(flatten)]
     pub additional_data: Map<String, Value>,
 }
@@ -54,6 +57,7 @@ impl OAuthStatePayload {
             expires_at: (Utc::now() + Duration::minutes(10)).timestamp_millis(),
             request_sign_up,
             id_token_nonce: None,
+            oauth_state: None,
             additional_data,
         }
     }
@@ -111,13 +115,6 @@ impl AccountCookiePayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct StateCookieClaims {
-    state: String,
-    exp: usize,
-    iat: usize,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 struct StatePayloadClaims {
     #[serde(flatten)]
     payload: OAuthStatePayload,
@@ -144,30 +141,35 @@ pub(crate) fn account_cookie_name(config: &AuthConfig) -> String {
     related_cookie_name(config, "account_data")
 }
 
-pub(crate) fn create_database_state_cookie_value(secret: &str, state: &str) -> AuthResult<String> {
-    let now = Utc::now();
-    let claims = StateCookieClaims {
-        state: state.to_string(),
-        exp: (now + Duration::minutes(10)).timestamp() as usize,
-        iat: now.timestamp() as usize,
-    };
-    Ok(encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(secret.as_bytes()),
-    )?)
+/// The database strategy's state cookie: the state, signed as better-auth's
+/// `setSignedCookie` signs it.
+pub(crate) fn create_database_state_cookie_value(secret: &str, state: &str) -> String {
+    better_auth_core::utils::cookie_utils::sign_cookie_value(state, secret)
 }
 
-pub(crate) fn decode_database_state_cookie_value(secret: &str, token: &str) -> AuthResult<String> {
-    let mut validation = Validation::new(Algorithm::HS256);
-    validation.validate_exp = true;
-    Ok(decode::<StateCookieClaims>(
-        token,
-        &DecodingKey::from_secret(secret.as_bytes()),
-        &validation,
-    )?
-    .claims
-    .state)
+pub(crate) fn decode_database_state_cookie_value(secret: &str, value: &str) -> Option<String> {
+    better_auth_core::utils::cookie_utils::verify_cookie_value(value, secret)
+}
+
+/// The identifier of a database-stored state, as better-auth names it.
+pub(crate) fn state_identifier(state: &str) -> String {
+    format!("auth-state:{state}")
+}
+
+/// better-auth's `generateRandomString` with its default alphabet.
+pub(crate) fn random_string(length: usize) -> String {
+    use rand::seq::SliceRandom;
+    const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+    let mut rng = rand::thread_rng();
+    (0..length)
+        .map(|_| {
+            ALPHABET
+                .choose(&mut rng)
+                .copied()
+                .map(char::from)
+                .unwrap_or('a')
+        })
+        .collect()
 }
 
 pub(crate) fn create_cookie_state_value(
@@ -277,6 +279,7 @@ fn reserved_state_key(key: &str) -> bool {
             | "expiresAt"
             | "requestSignUp"
             | "idTokenNonce"
+            | "oauthState"
             | "serverContext"
     )
 }

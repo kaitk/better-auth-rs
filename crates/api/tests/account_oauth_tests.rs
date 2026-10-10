@@ -1218,7 +1218,7 @@ async fn test_account_linking_disabled_rejects_new_provider() {
     });
 
     db.create_verification(CreateVerification {
-        identifier: format!("oauth:{}", state),
+        identifier: format!("auth-state:{}", state),
         value: payload.to_string(),
         expires_at: chrono::Utc::now() + chrono::Duration::minutes(10),
     })
@@ -1360,7 +1360,7 @@ async fn test_callback_with_encryption_encrypts_tokens_for_new_user() {
     });
 
     db.create_verification(CreateVerification {
-        identifier: format!("oauth:{}", state),
+        identifier: format!("auth-state:{}", state),
         value: payload.to_string(),
         expires_at: chrono::Utc::now() + chrono::Duration::minutes(10),
     })

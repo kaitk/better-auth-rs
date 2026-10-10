@@ -50,11 +50,7 @@ async fn require_session<S: better_auth_core::AuthSchema>(
 }
 
 fn generate_pkce() -> (String, String) {
-    let verifier: String = thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(43)
-        .map(char::from)
-        .collect();
+    let verifier = super::state::random_string(128);
     let mut hasher = Sha256::new();
     hasher.update(verifier.as_bytes());
     let challenge = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hasher.finalize());
@@ -196,7 +192,7 @@ pub(super) fn attach_state_cookie(
     secret: &str,
     state: &str,
 ) -> AuthResult<AuthResponse> {
-    let value = create_database_state_cookie_value(secret, state)?;
+    let value = create_database_state_cookie_value(secret, state);
     Ok(response.with_appended_header(
         "Set-Cookie",
         better_auth_core::utils::cookie_utils::create_cookie(
@@ -758,7 +754,7 @@ pub(super) async fn initiate_oauth_flow_core(
     request: FlowStartRequest<'_>,
 ) -> AuthResult<InitiatedOAuthFlow> {
     let (code_verifier, code_challenge) = generate_pkce();
-    let state = uuid::Uuid::new_v4().to_string();
+    let state = super::state::random_string(32);
 
     let mut payload = OAuthStatePayload::new(
         request.callback_url.to_string(),
@@ -769,6 +765,7 @@ pub(super) async fn initiate_oauth_flow_core(
         request.request_sign_up,
         request.additional_data,
     );
+    payload.oauth_state = Some(state.clone());
 
     payload.id_token_nonce = request.provider.requires_nonce().then(|| {
         thread_rng()
@@ -783,7 +780,7 @@ pub(super) async fn initiate_oauth_flow_core(
             let _ = ctx
                 .database
                 .create_verification(CreateVerification {
-                    identifier: format!("oauth:{}", state),
+                    identifier: super::state::state_identifier(&state),
                     value: serde_json::to_string(&payload)?,
                     expires_at: Utc::now() + Duration::minutes(10),
                 })

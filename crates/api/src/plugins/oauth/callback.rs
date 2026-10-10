@@ -136,62 +136,64 @@ pub(super) async fn handle_callback(
             )));
         }
     };
+    // better-auth's parseGenericState: a state error goes to the flow's errorURL once the
+    // stored state is read, else to the default error page, and leaves the state cookie.
+    let state_error = |url: Option<&str>| {
+        redirect_response(
+            &build_redirect_url(
+                &auth_base_url(ctx),
+                Some(url.unwrap_or(&default_error_url)),
+                &[("error", "state_mismatch")],
+            )
+            .unwrap_or_else(|_| format!("{default_error_url}?error=state_mismatch")),
+        )
+    };
     let payload = match ctx.config.account.store_state_strategy {
         better_auth_core::OAuthStateStrategy::Database => {
-            let verification = match ctx
+            let identifier = super::state::state_identifier(&state_param);
+            let Some(verification) = ctx
                 .database
-                .get_verification_by_identifier(&format!("oauth:{state_param}"))
+                .get_verification_by_identifier(&identifier)
                 .await?
-            {
-                Some(verification) => verification,
-                None => {
-                    return Ok(redirect_response(&format!(
-                        "{default_error_url}?error=please_restart_the_process"
-                    )));
-                }
+            else {
+                return Ok(state_error(None));
             };
-
-            if !ctx.config.account.skip_state_cookie_check {
-                let Some(cookie_value) = get_cookie(req, &state_cookie_name(&ctx.config)) else {
-                    return Ok(redirect_response(&format!(
-                        "{default_error_url}?error=state_mismatch"
-                    )));
-                };
-                let persisted_state =
-                    match decode_database_state_cookie_value(&ctx.config.secret, &cookie_value) {
-                        Ok(state) => state,
-                        Err(_) => {
-                            return Ok(redirect_response(&format!(
-                                "{default_error_url}?error=state_mismatch"
-                            )));
-                        }
-                    };
-                if persisted_state != state_param {
-                    return Ok(redirect_response(&format!(
-                        "{default_error_url}?error=state_mismatch"
-                    )));
-                }
-            }
-
             let payload: OAuthStatePayload = serde_json::from_str(verification.value())
                 .map_err(|error| AuthError::internal(format!("Invalid state payload: {error}")))?;
-            ctx.database.delete_verification(&verification.id()).await?;
+            if payload
+                .oauth_state
+                .as_ref()
+                .is_some_and(|stored| stored != &state_param)
+            {
+                return Ok(state_error(payload.error_url.as_deref()));
+            }
+            if !ctx.config.account.skip_state_cookie_check {
+                let persisted = get_cookie(req, &state_cookie_name(&ctx.config)).and_then(
+                    |value| decode_database_state_cookie_value(&ctx.config.secret, &value),
+                );
+                if persisted.as_deref() != Some(state_param.as_str()) {
+                    return Ok(state_error(payload.error_url.as_deref()));
+                }
+            }
+            let _ = ctx
+                .database
+                .consume_verification_by_identifier(&identifier)
+                .await?;
             payload
         }
         better_auth_core::OAuthStateStrategy::Cookie => {
             let Some(cookie_value) = get_cookie(req, &state_cookie_name(&ctx.config)) else {
+                return Ok(state_error(None));
+            };
+            let Ok(payload) = decode_cookie_state_value(&ctx.config.secret, &cookie_value) else {
                 return Ok(redirect_response(&format!(
-                    "{default_error_url}?error=please_restart_the_process"
+                    "{default_error_url}?error=state_invalid"
                 )));
             };
-            match decode_cookie_state_value(&ctx.config.secret, &cookie_value) {
-                Ok(payload) => payload,
-                Err(_) => {
-                    return Ok(redirect_response(&format!(
-                        "{default_error_url}?error=please_restart_the_process"
-                    )));
-                }
+            if payload.oauth_state.as_deref() != Some(state_param.as_str()) {
+                return Ok(state_error(payload.error_url.as_deref()));
             }
+            payload
         }
     };
 
@@ -228,15 +230,15 @@ pub(super) async fn handle_callback(
         response
     };
 
+    if payload.is_expired() {
+        return Ok(redirect_on_error("state_mismatch", None));
+    }
+
     if let Some(error) = error.as_deref().filter(|error| !error.is_empty()) {
         return Ok(redirect_on_error(
             error,
             merged.get("error_description").map(String::as_str),
         ));
-    }
-
-    if payload.is_expired() {
-        return Ok(redirect_on_error("please_restart_the_process", None));
     }
 
     let Some(code) = merged.get("code").filter(|code| !code.is_empty()).cloned() else {
